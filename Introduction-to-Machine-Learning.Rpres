@@ -1,0 +1,236 @@
+```{r,echo=FALSE,results='hide'}
+Sys.setlocale(locale="en_US.UTF-8")
+```
+
+Introduction to Machine Learning
+========================================================
+author: Ray Cai
+date: `r format(Sys.time(), "%B %d, %Y")`
+
+Agenda
+========================================================
+
+- What is Machine Learning
+- Types of problems and tasks
+- Machine Learning Process
+
+
+What is Machine Learning
+========================================================
+
+* Common Function
+
+$$ Y = f(X) $$
+
+$$ x_{1}x_{2}...x_{n} \rightarrow f \rightarrow y_{1}y_{2}...y_{n} $$
+
+* Machine Learning Function
+
+$$ f = g(X,Y) $$
+
+$$ x_{1}x_{2}...x_{n},y_{1}y_{2}...y_{n} \rightarrow g \rightarrow f $$
+
+What is Machine Learning - Example
+========================================================
+
+Suppose: known parents' height $X$  
+Task: Predict children's height $Y$ by parents' height $X$
+
+What is Machine Learning - Example
+========================================================
+
+Common Solution:
+
+Build function $f$, which accept input $X$ and output $Y$:
+
+$$ f(X) = a + bX + c $$
+
+$a$, $b$ and $c$ are constant
+
+What is Machine Learning - Example
+========================================================
+
+Machine Learning Solution:
+
+Build a function $g$, which accept $X$, $Y$ as input and output function $f$:
+
+$$ f = g(X,Y) $$
+
+Then function $f$ accept $X$ as input and output $Y$:
+
+$$ Y = f(X) $$
+
+
+Types of problems and tasks
+========================================================
+
+* Supervised Learning
+
+  > dataset contains inputs and desired outputs
+  
+* Unsupervised Learning
+
+  > dataset only contains inputs, without desired outputs
+  
+* Reinformance Learning
+
+  > ~~no idea, AlphaGo belongs to this category~~
+  
+Supervised Learning
+========================================================
+
+**For example:**   
+**Given** dataset contains parents' height as input ($X$) and children's height as desired output ($Y$), 
+```{r,echo=FALSE}
+require(HistData)
+data("Galton")
+head(Galton,3)
+```
+**Ask** build a function $f$ which accept new parents' height as input, and output children's height.
+
+> Supervied Learning
+
+
+Unsupervised Learning
+========================================================
+
+**For example:**   
+**Given** cars' mpg (Mile per Gallon),
+```{r,echo=FALSE}
+require(datasets)
+data(mtcars)
+head(mtcars[,1,drop=FALSE],3)
+```
+**Ask** build a function $f$ which accept mpg of new cars and categorize them into certain category.
+
+> Unsupervised Learning
+
+Machine Learning Process
+=========================================================
+
+1. Prepare dataset
+2. Choose algorithm
+3. Train model
+4. Evaluate final model
+
+Example
+==========================================================
+
+**Task:** build a prediction function to predict children's height by parents' height.
+
+**Source:** Galton, F. (1886). Regression Towards Mediocrity in Hereditary Stature Journal of the Anthropological Institute, 15, 246-263
+
+
+Example - Prepare dataset
+==========================================================
+
+> Galton (1886) presented these data in a table, showing a cross-tabulation of 928 adult children born to 205 fathers and mothers, by their height and their mid-parent's height. He visually smoothed the bivariate frequency distribution and showed that the contours formed concentric and similar ellipses, thus setting the stage for correlation, regression and the bivariate normal distribution.
+
+Example - Prepare dataset
+==========================================================
+
+```{r,echo=FALSE}
+require(HistData)
+data("Galton")
+head(Galton,3)
+```
+
+* **parent** a numeric vector: height of the mid-parent (average of father and mother) in inch
+
+$$ parent= \frac{male\ parent's\ height + female\ parent's\ height \times 1.08}{2} $$
+
+* **child** a numeric vector: height of the child in inch
+
+Example - Prepare dataset
+==========================================================
+
+Divide dataset into **train** data and **test** data.
+
+```{r,echo=FALSE}
+library(caret)
+inTrain<-createDataPartition(Galton$child,p=0.8,list=FALSE)
+trainData<-Galton[inTrain,]
+testData<-Galton[-inTrain,]
+```
+Dataset  |#measurement
+---------|------------------
+**train**|`r nrow(trainData)`
+**test**|`r nrow(testData)`
+
+**train** data used to train model.  
+**test** data used to evaluate model.  
+
+Example - Prepare dataset
+==========================================================
+
+```{r,echo=FALSE,fig.width=10,fig.height=8}
+plot(child~parent,Galton,main="Parents' height - Children's height",xlab="height of parent (inch)",ylab="height of child (inch)")
+```
+
+Example - Choose algorithm
+==========================================================
+
+> Compared to dataset, the impact of algorithm choosing is very small
+
+
+Example - Choose algorithm
+=========================================================
+
+**Simple Linear Regression**
+
+$$ y = \beta_0+\beta_1x $$
+
+Coefficient $\beta_0$ and $\beta_1$ is unkown, which need be calculated on next step.
+
+Example - Train model
+=========================================================
+
+Adjust coefficient to minimize the standard error.
+
+Example - Train model
+=========================================================
+
+Suppose the final model is $\hat{f}$, input $x_{1}x_{2}...x_{n}$, actual output $y_{1}y_{2}...y_{n}$, and the predicted output is $\hat{y}_{1}\hat{y}_{2}...\hat{y}_{n}$   
+
+Then **standard error** $SE$
+
+$$ SE = \sqrt{\sum_{j=1}^{n}{(\hat{y}_{j}-y_{j})^2}} $$
+
+And $\hat{y}_{j} = \beta_0+\beta_1x_{j}$, therefore
+
+$$ SE = \sqrt{\sum_{j=1}^{n}{(\beta_0+\beta_1x_{j}-y_{j})^2}} $$
+
+Example - Evaluate final model
+==========================================================
+
+Suppose the final model is $\hat{f}$, input test data $x_{1}x_{2}...x_{n}$, actual output $y_{1}y_{2}...y_{n}$, and the predicted output is $\hat{y}_{1}\hat{y}_{2}...\hat{y}_{n}$   
+
+Calculate the **standard error**
+
+> Overfitting
+
+Example - Evaluate final model
+==========================================================
+
+```{r,echo=FALSE,fig.width=12,fig.height=8}
+fit<-lm(child~parent,data=trainData)
+testResult<-predict(fit,testData)
+resids<-testResult-testData$child
+
+par(mfrow=c(2,1))
+plot(child~parent,data=testData,main="Parent's height vs Child's (Test data)",xlab="height of parent (inch)",ylab="height of child (inch)")
+abline(fit$coefficients[1],fit$coefficients[2],col="green")
+
+plot(resids~testData$parent, main="Residuals",xlab="height of parent (inch)",ylab="residual of child (inch)")
+abline(0,0)
+```
+
+Q & A
+==========================================================
+
+Reading
+==========================================================
+
+1. [https://en.wikipedia.org/wiki/Machine_learning](https://en.wikipedia.org/wiki/Machine_learning)
+2. [https://en.wikipedia.org/wiki/Simple_linear_regression](https://en.wikipedia.org/wiki/Simple_linear_regression)
+3. [https://www.coursera.org/learn/practical-machine-learning](https://www.coursera.org/learn/practical-machine-learning)
